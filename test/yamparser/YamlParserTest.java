@@ -49,12 +49,3 @@ public class YamlParserTest {
 	}
 	
 }
-
-//- action : delay     # 3rd message from Charlie that anyone
-//src    : Charlie        # receives will be duplicated
-//dest   : Dephnie
-//kind   : ACK
-//seqNum : 12
-//- action : drop      # 3rd message from Charlie that anyone
-//src    : Charlie        # receives will be duplicated
-//dest   : Alice
