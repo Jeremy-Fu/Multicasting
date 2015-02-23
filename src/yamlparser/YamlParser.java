@@ -1,5 +1,6 @@
 package yamlparser;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -7,11 +8,17 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import messagepasser.Message;
+import messagepasser.Rule;
 import multicast.Group;
 
 import org.yaml.snakeyaml.Yaml;
 
+
 public class YamlParser {
+	
+	
+	private String configFilePath;
 	
 	private Hashtable<String, String> portTableInfo = new Hashtable<String, String>();
 	private Hashtable<String, String> sendRuleTable = new Hashtable<String, String>();
@@ -19,6 +26,11 @@ public class YamlParser {
 	private List<String> namelist = new ArrayList<String>();
 	private String[] loggerinfo = new String[2];
 	List<Group> groups = new ArrayList<Group>();
+	
+	
+	public YamlParser(String filePath) {
+		configFilePath = filePath;
+	}
 
 	public void yamiParser(String file) throws IOException {
 		Yaml yaml = new Yaml();
@@ -139,5 +151,60 @@ public class YamlParser {
 	public String[] getLoggerInfo() {
 		return loggerinfo;
 	}
+	
+	public List<Rule<Message>> getSendRules() throws FileNotFoundException {
+		Yaml yaml = new Yaml();
+		@SuppressWarnings("unchecked")
+		Map<String, Object> content = (Map<String, Object>) yaml
+				.load(new FileReader(configFilePath));
+		
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> yamlRules = (List<Map<String, Object>>)content.get("sendRules");
+		
+		List<Rule<Message>> rules = new ArrayList<Rule<Message>>();
+		
+		for (Map<String, Object> yamlRule : yamlRules) {
+			
+			Rule<Message> rule = 
+					new Rule.Builder<Message>((String)yamlRule.get("action"))
+					.from((String)yamlRule.get("src"))
+					.to((String)yamlRule.get("dest"))
+					.kind((String)yamlRule.get("kind"))
+					.seqNum((Integer)yamlRule.get("seqNum"))
+					.build();
+			rules.add(rule);
+		}
+		
+		return rules;
+	}
+	
+	public List<Rule<Message>> getRecvRules() throws FileNotFoundException {
+		Yaml yaml = new Yaml();
+		@SuppressWarnings("unchecked")
+		Map<String, Object> content = (Map<String, Object>) yaml
+				.load(new FileReader(configFilePath));
+		
+		@SuppressWarnings("unchecked")
+		List<Map<String, Object>> yamlRules = (List<Map<String, Object>>)content.get("receiveRules");
+		
+		List<Rule<Message>> rules = new ArrayList<Rule<Message>>();
+		
+		for (Map<String, Object> yamlRule : yamlRules) {
+			
+			Rule.Builder<Message> builder = new Rule.Builder<Message>((String)yamlRule.get("action"));
+			
+			builder.from((String)yamlRule.get("src"))
+					.to((String)yamlRule.get("dest"))
+					.kind((String)yamlRule.get("kind"));
+			if (yamlRule.get("seqNum") != null) {
+				builder.seqNum((Integer)yamlRule.get("seqNum"));
+			}
+			
+			rules.add(builder.build());
+		}
+		
+		return rules;
+	}
+	
 
 }
